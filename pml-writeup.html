@@ -63,7 +63,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <p>In this project, the goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants who were asked to perform barbell lifts correctly and incorrectly in 5 different ways as trainng data set to develop a model, and finally use it to predict the manner in which they did the exercise in the 20 test data set observations.</p>
 </div>
 <div id="load-and-prepareclean-training-data" class="section level2">
-<h2>load and prepare/clean Training data</h2>
+<h2>Load and prepare/clean Training data</h2>
 <p>Attempt to first investigate the characteristics of raw training data set.</p>
 <pre class="r"><code>library(lattice)
 library(ggplot2)
@@ -260,7 +260,7 @@ modFit &lt;- train(classe ~ ., data=rawTrainData1, method=&quot;rf&quot;, trCont
 <pre><code>## Warning: package 'randomForest' was built under R version 3.1.3</code></pre>
 <pre><code>## randomForest 4.6-10
 ## Type rfNews() to see new features/changes/bug fixes.</code></pre>
-<pre class="r"><code># print tuning parameters it choosen in final model
+<pre class="r"><code># print tuning parameters choosen in final model
 modFit$finalModel</code></pre>
 <pre><code>## 
 ## Call:
@@ -325,7 +325,25 @@ confusionMatrix(rawTrainData2$classe, predictions)</code></pre>
 <p>As the result is very good, Random Forests will be used to predict labels for the test set (20 test cases) provided. I will now retrain the model using the Full training set (rawTrainData) before predicting on the test set given.</p>
 <pre class="r"><code># re-model using full training set (rawTrainData)
 modControl &lt;- trainControl(method=&quot;cv&quot;, number=3, verboseIter=F)
-modFit &lt;- train(classe ~ ., data=rawTrainData, method=&quot;rf&quot;, trControl=modControl)</code></pre>
+modFit &lt;- train(classe ~ ., data=rawTrainData, method=&quot;rf&quot;, trControl=modControl)
+
+# print tuning parameters choosen in final model
+modFit$finalModel</code></pre>
+<pre><code>## 
+## Call:
+##  randomForest(x = x, y = y, mtry = param$mtry) 
+##                Type of random forest: classification
+##                      Number of trees: 500
+## No. of variables tried at each split: 27
+## 
+##         OOB estimate of  error rate: 0.13%
+## Confusion matrix:
+##      A    B    C    D    E  class.error
+## A 5578    1    0    0    1 0.0003584229
+## B    6 3788    2    1    0 0.0023702923
+## C    0    4 3418    0    0 0.0011689071
+## D    0    0    8 3207    1 0.0027985075
+## E    0    0    0    2 3605 0.0005544774</code></pre>
 </div>
 <div id="using-the-model-for-test-set-predictions" class="section level2">
 <h2>Using the model for Test Set Predictions</h2>

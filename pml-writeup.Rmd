@@ -2,14 +2,14 @@
 title: "Practical Machine Learning Course Project"
 author: "Ong Kwee Hian"
 date: "Saturday, August 22, 2015"
-output: pdf_document
+output: html_document
 ---
 
 
 ## Introduction
 In this project, the goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants who were asked to perform barbell lifts correctly and incorrectly in 5 different ways as trainng data set to develop a model, and finally use it to predict the manner in which they did the exercise in the 20 test data set observations.
 
-## load and prepare/clean Training data 
+## Load and prepare/clean Training data 
 
 Attempt to first investigate the characteristics of raw training data set.
 ```{r warning=FALSE}
@@ -51,14 +51,14 @@ rawTrainData2 <- rawTrainData[-inTrain, ]   # For testing
 
 Applying Random Forest model on rawTrainData1, and "train" using 3-fold cross-validation to select optimal tuning parameters for acceptable performance for the model.
 
-```{r eval=FALSE}
+```{r}
 # Use 3-fold cross-validation to select optimal tuning parameters
 modControl <- trainControl(method="cv", number=3, verboseIter=FALSE)
 
 # fit model on rawTrainData1
 modFit <- train(classe ~ ., data=rawTrainData1, method="rf", trControl=modControl)
 
-# print tuning parameters it choosen in final model
+# print tuning parameters choosen in final model
 modFit$finalModel
 ```
 
@@ -68,9 +68,9 @@ The result return is 500 trees and try 27 variables at each split.
 
 This model is used to predict the label ("classe") in rawTrainData2, and confusion matrix is used to compare the predicted versus the actual labels:
 
-```{r eval=FALSE}
+```{r}
 # Predict classe label in validation set (rawTrainData2) using model
-predictions <- predict(fitData, newdata=rawTrainData2)
+predictions <- predict(modFit, newdata=rawTrainData2)
 
 # Print confusion matrix to understand out-of-sample error
 confusionMatrix(rawTrainData2$classe, predictions)
@@ -79,15 +79,17 @@ confusionMatrix(rawTrainData2$classe, predictions)
 The accuracy is 99.8%, thus my predicted accuracy for the out-of-sample error with cross validation is 0.2%, which is very good.
 
 
-
 ## Re-training the Model using Full training data
 
 As the result is very good, Random Forests will be used to predict labels for the test set (20 test cases) provided. I will now retrain the model using the Full training set (rawTrainData) before predicting on the test set given. 
 
-```{r eval=FALSE}
+```{r}
 # re-model using full training set (rawTrainData)
 modControl <- trainControl(method="cv", number=3, verboseIter=F)
 modFit <- train(classe ~ ., data=rawTrainData, method="rf", trControl=modControl)
+
+# print tuning parameters choosen in final model
+modFit$finalModel
 ```
 
 ## Using the model for Test Set Predictions
@@ -115,5 +117,5 @@ pml_write_files(predictions)
 ```
 
 The created  result file input are used for project submission.
-As the model take a long time to generate, the model output are only show in pdf file.
+As the model take a long time to generate, the model output are only show in html file.
 
