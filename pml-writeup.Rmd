@@ -1,0 +1,119 @@
+---
+title: "Practical Machine Learning Course Project"
+author: "Ong Kwee Hian"
+date: "Saturday, August 22, 2015"
+output: pdf_document
+---
+
+
+## Introduction
+In this project, the goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants who were asked to perform barbell lifts correctly and incorrectly in 5 different ways as trainng data set to develop a model, and finally use it to predict the manner in which they did the exercise in the 20 test data set observations.
+
+## load and prepare/clean Training data 
+
+Attempt to first investigate the characteristics of raw training data set.
+```{r warning=FALSE}
+library(lattice)
+library(ggplot2)
+library(caret)
+
+rawTrainData <- read.csv("pml-training.csv")  # Training data set
+rawTestData <- read.csv("pml-testing.csv")    # Test data set
+
+str(rawTrainData)
+```
+There a quite a large number of NA and also variable not useful for analysis. To clean away unnecessary variables, i will remove variables with nearly zero variance, variables that has NA, and variables that are irrelevant for prediction e.g. user_name, time stanp, etc. 
+```{r}
+# remove near zero variance variables
+nzv <- nearZeroVar(rawTrainData)
+rawTrainData <- rawTrainData[, -nzv]
+
+# remove NA variables
+NAs <- apply(rawTrainData, 2, function(x) { sum(is.na(x)) })
+rawTrainData <- rawTrainData[, which(NAs == 0)]
+
+# remove first five irrlevant variables (X, user_name, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp)
+rawTrainData <- rawTrainData[, -(1:5)]
+
+str(rawTrainData)
+```
+
+To be able to estimate the out-of-sample error, I will make use of this training set by splitting the Full training data set (rawTrainData) into 2 smaller sets for use, one for training purpose (rawTrainData1) and the other for validation purpose (rawTrainData2):
+
+```{r}
+set.seed(082015)
+inTrain <- createDataPartition(y=rawTrainData$classe, p=0.7, list=F)
+rawTrainData1 <- rawTrainData[inTrain, ]    # For training
+rawTrainData2 <- rawTrainData[-inTrain, ]   # For testing
+```
+
+## Build Model 
+
+Applying Random Forest model on rawTrainData1, and "train" using 3-fold cross-validation to select optimal tuning parameters for acceptable performance for the model.
+
+```{r eval=FALSE}
+# Use 3-fold cross-validation to select optimal tuning parameters
+modControl <- trainControl(method="cv", number=3, verboseIter=FALSE)
+
+# fit model on rawTrainData1
+modFit <- train(classe ~ ., data=rawTrainData1, method="rf", trControl=modControl)
+
+# print tuning parameters it choosen in final model
+modFit$finalModel
+```
+
+The result return is 500 trees and try 27 variables at each split.
+
+## Model Evaluation and Selection
+
+This model is used to predict the label ("classe") in rawTrainData2, and confusion matrix is used to compare the predicted versus the actual labels:
+
+```{r eval=FALSE}
+# Predict classe label in validation set (rawTrainData2) using model
+predictions <- predict(fitData, newdata=rawTrainData2)
+
+# Print confusion matrix to understand out-of-sample error
+confusionMatrix(rawTrainData2$classe, predictions)
+```
+
+The accuracy is 99.8%, thus my predicted accuracy for the out-of-sample error with cross validation is 0.2%, which is very good.
+
+
+
+## Re-training the Model using Full training data
+
+As the result is very good, Random Forests will be used to predict labels for the test set (20 test cases) provided. I will now retrain the model using the Full training set (rawTrainData) before predicting on the test set given. 
+
+```{r eval=FALSE}
+# re-model using full training set (rawTrainData)
+modControl <- trainControl(method="cv", number=3, verboseIter=F)
+modFit <- train(classe ~ ., data=rawTrainData, method="rf", trControl=modControl)
+```
+
+## Using the model for Test Set Predictions
+
+The new model fit is applied on activity monitors in rawTestData to predict the activity quality label, and output to files:
+
+```{r eval=FALSE}
+# predict on test set
+predictions <- predict(modFit, newdata=rawTestData)
+
+# convert predictions to list of vector
+predictions <- as.character(predictions)
+
+# create function to write predictions to files
+pml_write_files <- function(x) {
+    n <- length(x)
+    for(i in 1:n) {
+        filename <- paste0("problem_id_", i, ".txt")
+        write.table(x[i], file=filename, quote=F, row.names=F, col.names=F)
+    }
+}
+
+# create prediction files to submit
+pml_write_files(predictions)
+```
+
+The created  result file input are used for project submission.
+As the model take a long time to generate, the model output are only show in pdf file.
+
